@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TaskCard, Task } from "@/components/TaskCard";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -47,12 +47,50 @@ const DEFAULT_ROUTINE: Task[] = [
 ];
 
 const Index = () => {
-  const [routineTasks, setRoutineTasks] = useState<Task[]>(DEFAULT_ROUTINE);
-  const [tomorrowTasks, setTomorrowTasks] = useState<Task[]>([]);
+  const [routineTasks, setRoutineTasks] = useState<Task[]>(() => {
+    const stored = localStorage.getItem("routineTasks");
+    return stored ? JSON.parse(stored) : DEFAULT_ROUTINE;
+  });
+  const [tomorrowTasks, setTomorrowTasks] = useState<Task[]>(() => {
+    const stored = localStorage.getItem("tomorrowTasks");
+    return stored ? JSON.parse(stored) : [];
+  });
   const { completionData, getTodayStats } = useTaskTracking(routineTasks, tomorrowTasks);
   const { completedToday, totalToday } = getTodayStats();
 
   const colors: Task["color"][] = ["lavender", "mint", "peach", "sky"];
+
+  // Save tasks to localStorage
+  useEffect(() => {
+    localStorage.setItem("routineTasks", JSON.stringify(routineTasks));
+  }, [routineTasks]);
+
+  useEffect(() => {
+    localStorage.setItem("tomorrowTasks", JSON.stringify(tomorrowTasks));
+  }, [tomorrowTasks]);
+
+  // Check for new day and reset tasks at midnight
+  useEffect(() => {
+    const checkAndResetForNewDay = () => {
+      const lastResetDate = localStorage.getItem("lastResetDate");
+      const today = new Date().toISOString().split('T')[0];
+      
+      if (lastResetDate !== today) {
+        // New day detected - reset all task completion statuses
+        setRoutineTasks(prev => prev.map(task => ({ ...task, completed: false })));
+        setTomorrowTasks(prev => prev.map(task => ({ ...task, completed: false })));
+        localStorage.setItem("lastResetDate", today);
+      }
+    };
+
+    // Check immediately on mount
+    checkAndResetForNewDay();
+
+    // Check every minute for midnight crossing
+    const interval = setInterval(checkAndResetForNewDay, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleAddTask = () => {
     const newTask: Task = {
