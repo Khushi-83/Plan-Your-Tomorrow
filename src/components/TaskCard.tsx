@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Trash2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,7 @@ export interface Task {
   importance: number;
   completed: boolean;
   color: "lavender" | "mint" | "peach" | "sky";
+  notes?: string;
 }
 
 interface TaskCardProps {
@@ -112,6 +114,14 @@ export const TaskCard = ({ task, onUpdate, onDelete }: TaskCardProps) => {
           onChange={(e) => onUpdate({ ...task, duration: e.target.value })}
           placeholder="Duration (optional)"
           className="border-0 bg-white/50 text-sm shadow-none focus-visible:ring-1"
+        />
+
+        {/* Notes Textarea */}
+        <Textarea
+          value={task.notes || ""}
+          onChange={(e) => onUpdate({ ...task, notes: e.target.value })}
+          placeholder="Add notes..."
+          className="min-h-[80px] resize-none border-0 bg-white/50 text-sm shadow-none focus-visible:ring-1"
         />
 
         {/* Urgency Slider */}
