@@ -5,38 +5,36 @@ interface StreakCalendarProps {
 }
 
 export const StreakCalendar = ({ completionData }: StreakCalendarProps) => {
-  // Generate last 12 months of dates
+  // Generate current month dates
   const generateCalendarData = () => {
     const weeks: Date[][] = [];
     const today = new Date();
-    const startDate = new Date(today);
-    startDate.setMonth(today.getMonth() - 11);
-    startDate.setDate(1);
+    const year = today.getFullYear();
+    const month = today.getMonth();
     
-    // Start from the first day of the week
-    const firstDay = startDate.getDay();
-    const adjustedStart = new Date(startDate);
-    adjustedStart.setDate(startDate.getDate() - firstDay);
+    // First day of current month
+    const firstDayOfMonth = new Date(year, month, 1);
+    const lastDayOfMonth = new Date(year, month + 1, 0);
+    
+    // Start from the first day of the week containing the first day of the month
+    const firstDay = firstDayOfMonth.getDay();
+    const adjustedStart = new Date(firstDayOfMonth);
+    adjustedStart.setDate(firstDayOfMonth.getDate() - firstDay);
     
     let currentDate = new Date(adjustedStart);
     let currentWeek: Date[] = [];
     
-    // Generate 52 weeks
-    for (let i = 0; i < 52 * 7; i++) {
-      if (currentDate <= today) {
+    // Generate weeks until we've covered the entire month
+    while (currentDate <= lastDayOfMonth || currentWeek.length > 0) {
+      if (currentWeek.length < 7) {
         currentWeek.push(new Date(currentDate));
+        currentDate.setDate(currentDate.getDate() + 1);
       }
       
       if (currentWeek.length === 7) {
         weeks.push(currentWeek);
         currentWeek = [];
       }
-      
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-    
-    if (currentWeek.length > 0) {
-      weeks.push(currentWeek);
     }
     
     return weeks;
@@ -57,80 +55,55 @@ export const StreakCalendar = ({ completionData }: StreakCalendarProps) => {
   const weeks = generateCalendarData();
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   
-  // Get month labels for display
-  const getMonthLabels = () => {
-    const labels: { month: string; weekIndex: number }[] = [];
-    let lastMonth = -1;
-    
-    weeks.forEach((week, index) => {
-      const month = week[0]?.getMonth();
-      if (month !== undefined && month !== lastMonth && index % 4 === 0) {
-        labels.push({ month: months[month], weekIndex: index });
-        lastMonth = month;
-      }
-    });
-    
-    return labels;
-  };
-
-  const monthLabels = getMonthLabels();
+  // Get current month name
+  const currentMonthName = months[new Date().getMonth()];
+  const currentYear = new Date().getFullYear();
 
   return (
     <div className="w-full overflow-x-auto rounded-2xl bg-card p-6 shadow-soft">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Daily Streak</h3>
-        <p className="text-sm text-muted-foreground">Your productivity journey</p>
+        <h3 className="text-lg font-semibold text-foreground">Daily Streak - {currentMonthName} {currentYear}</h3>
+        <p className="text-sm text-muted-foreground">Your productivity this month</p>
       </div>
       
       <div className="relative">
-        {/* Month labels */}
+        {/* Week day labels */}
         <div className="mb-2 flex gap-[3px] text-xs text-muted-foreground">
-          {monthLabels.map((label, i) => (
-            <div
-              key={i}
-              style={{ marginLeft: i === 0 ? 0 : `${(label.weekIndex - (monthLabels[i - 1]?.weekIndex || 0)) * 12}px` }}
-            >
-              {label.month}
-            </div>
-          ))}
+          <div className="w-[10px]">S</div>
+          <div className="w-[10px]">M</div>
+          <div className="w-[10px]">T</div>
+          <div className="w-[10px]">W</div>
+          <div className="w-[10px]">T</div>
+          <div className="w-[10px]">F</div>
+          <div className="w-[10px]">S</div>
         </div>
         
-        {/* Day labels */}
-        <div className="flex gap-2">
-          <div className="flex flex-col gap-[3px] text-xs text-muted-foreground">
-            <div className="h-[10px]">Mon</div>
-            <div className="h-[10px]"></div>
-            <div className="h-[10px]">Wed</div>
-            <div className="h-[10px]"></div>
-            <div className="h-[10px]">Fri</div>
-            <div className="h-[10px]"></div>
-            <div className="h-[10px]"></div>
-          </div>
-          
-          {/* Calendar grid */}
-          <div className="flex gap-[3px]">
-            {weeks.map((week, weekIndex) => (
-              <div key={weekIndex} className="flex flex-col gap-[3px]">
-                {week.map((date, dayIndex) => {
-                  const dateStr = formatDate(date);
-                  const count = completionData[dateStr] || 0;
-                  const isToday = formatDate(new Date()) === dateStr;
-                  
-                  return (
-                    <div
-                      key={dayIndex}
-                      title={`${dateStr}: ${count} task${count !== 1 ? 's' : ''} completed`}
-                      className={cn(
-                        "h-[10px] w-[10px] rounded-sm transition-all hover:ring-2 hover:ring-primary/50",
-                        getIntensityClass(count),
-                        isToday && "ring-2 ring-primary"
-                      )}
-                    />
-                  );
-                })}
-              </div>
-            ))}
-          </div>
+        {/* Calendar grid */}
+        <div className="flex flex-col gap-[3px]">
+          {weeks.map((week, weekIndex) => (
+            <div key={weekIndex} className="flex gap-[3px]">
+              {week.map((date, dayIndex) => {
+                const dateStr = formatDate(date);
+                const count = completionData[dateStr] || 0;
+                const isToday = formatDate(new Date()) === dateStr;
+                const isCurrentMonth = date.getMonth() === new Date().getMonth();
+                
+                return (
+                  <div
+                    key={dayIndex}
+                    title={`${dateStr}: ${count} task${count !== 1 ? 's' : ''} completed`}
+                    className={cn(
+                      "h-[32px] w-[32px] rounded-lg transition-all hover:ring-2 hover:ring-primary/50 flex items-center justify-center text-xs font-medium",
+                      isCurrentMonth ? getIntensityClass(count) : "bg-muted/10 text-muted-foreground/30",
+                      isToday && "ring-2 ring-primary"
+                    )}
+                  >
+                    {date.getDate()}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
         
         {/* Legend */}
