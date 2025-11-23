@@ -14,7 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      task_completions: {
+        Row: {
+          completed_count: number
+          completion_date: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          completed_count?: number
+          completion_date: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          completed_count?: number
+          completion_date?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          color: string
+          completed: boolean
+          created_at: string
+          duration: string
+          id: string
+          importance: number
+          notes: string | null
+          task_type: string
+          title: string
+          updated_at: string
+          urgency: number
+          user_id: string
+        }
+        Insert: {
+          color: string
+          completed?: boolean
+          created_at?: string
+          duration: string
+          id?: string
+          importance: number
+          notes?: string | null
+          task_type: string
+          title: string
+          updated_at?: string
+          urgency: number
+          user_id: string
+        }
+        Update: {
+          color?: string
+          completed?: boolean
+          created_at?: string
+          duration?: string
+          id?: string
+          importance?: number
+          notes?: string | null
+          task_type?: string
+          title?: string
+          updated_at?: string
+          urgency?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
