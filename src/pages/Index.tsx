@@ -1,141 +1,117 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { TaskCard, Task } from "@/components/TaskCard";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { ProgressStats } from "@/components/ProgressStats";
-import { useTaskTracking } from "@/hooks/useTaskTracking";
-
-const DEFAULT_ROUTINE: Task[] = [
-  {
-    id: "1",
-    title: "Morning Yoga",
-    duration: "30 minutes",
-    urgency: 4,
-    importance: 4,
-    completed: false,
-    color: "lavender",
-  },
-  {
-    id: "2",
-    title: "DSA Practice",
-    duration: "1 hour",
-    urgency: 5,
-    importance: 5,
-    completed: false,
-    color: "mint",
-  },
-  {
-    id: "3",
-    title: "Learning Session",
-    duration: "45 minutes",
-    urgency: 4,
-    importance: 5,
-    completed: false,
-    color: "peach",
-  },
-  {
-    id: "4",
-    title: "Reading Time",
-    duration: "30 minutes",
-    urgency: 3,
-    importance: 4,
-    completed: false,
-    color: "sky",
-  },
-];
+import { useTasks } from "@/hooks/useTasks";
+import { useTaskCompletion } from "@/hooks/useTaskCompletion";
+import { User, Session } from '@supabase/supabase-js';
 
 const Index = () => {
-  const [routineTasks, setRoutineTasks] = useState<Task[]>(() => {
-    const stored = localStorage.getItem("routineTasks");
-    return stored ? JSON.parse(stored) : DEFAULT_ROUTINE;
-  });
-  const [tomorrowTasks, setTomorrowTasks] = useState<Task[]>(() => {
-    const stored = localStorage.getItem("tomorrowTasks");
-    return stored ? JSON.parse(stored) : [];
-  });
-  const { completionData, getTodayStats } = useTaskTracking(routineTasks, tomorrowTasks);
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const navigate = useNavigate();
+
+  const { routineTasks, tomorrowTasks, loading, addTask, updateTask, deleteTask } = useTasks(user?.id);
+  const { completionData, getTodayStats } = useTaskCompletion(user?.id, routineTasks, tomorrowTasks);
   const { completedToday, totalToday } = getTodayStats();
 
   const colors: Task["color"][] = ["lavender", "mint", "peach", "sky"];
 
-  // Save tasks to localStorage
   useEffect(() => {
-    localStorage.setItem("routineTasks", JSON.stringify(routineTasks));
-  }, [routineTasks]);
-
-  useEffect(() => {
-    localStorage.setItem("tomorrowTasks", JSON.stringify(tomorrowTasks));
-  }, [tomorrowTasks]);
-
-  // Check for new day and reset tasks at midnight
-  useEffect(() => {
-    const checkAndResetForNewDay = () => {
-      const lastResetDate = localStorage.getItem("lastResetDate");
-      const today = new Date().toISOString().split('T')[0];
-      
-      if (lastResetDate !== today) {
-        // New day detected - reset all task completion statuses
-        setRoutineTasks(prev => prev.map(task => ({ ...task, completed: false })));
-        setTomorrowTasks(prev => prev.map(task => ({ ...task, completed: false })));
-        localStorage.setItem("lastResetDate", today);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (!session?.user) {
+          setTimeout(() => {
+            navigate("/auth");
+          }, 0);
+        }
       }
-    };
+    );
 
-    // Check immediately on mount
-    checkAndResetForNewDay();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (!session?.user) {
+        navigate("/auth");
+      }
+    });
 
-    // Check every minute for midnight crossing
-    const interval = setInterval(checkAndResetForNewDay, 60000);
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
-    return () => clearInterval(interval);
-  }, []);
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+    toast.success("Signed out successfully");
+  };
 
   const handleAddTask = () => {
-    const newTask: Task = {
-      id: Date.now().toString(),
+    const newTask: Omit<Task, "id"> = {
       title: "New Task",
       duration: "",
       urgency: 3,
       importance: 3,
       completed: false,
       color: colors[tomorrowTasks.length % colors.length],
+      notes: "",
     };
-    setTomorrowTasks([...tomorrowTasks, newTask]);
-    toast.success("Task added to Tomorrow's list");
+    addTask(newTask, "tomorrow");
   };
 
   const handleUpdateRoutineTask = (updatedTask: Task) => {
-    setRoutineTasks(
-      routineTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
-    );
+    updateTask(updatedTask.id, updatedTask, "routine");
   };
 
   const handleUpdateTomorrowTask = (updatedTask: Task) => {
-    setTomorrowTasks(
-      tomorrowTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
-    );
+    updateTask(updatedTask.id, updatedTask, "tomorrow");
   };
 
   const handleDeleteRoutineTask = (id: string) => {
-    setRoutineTasks(routineTasks.filter((task) => task.id !== id));
-    toast.success("Task removed from routine");
+    deleteTask(id, "routine");
   };
 
   const handleDeleteTomorrowTask = (id: string) => {
-    setTomorrowTasks(tomorrowTasks.filter((task) => task.id !== id));
-    toast.success("Task removed");
+    deleteTask(id, "tomorrow");
   };
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your tasks...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Header */}
-        <header className="mb-12 text-center">
-          <h1 className="mb-3 text-5xl font-bold tracking-tight text-foreground">
-            Tomorrow Planner
-          </h1>
+        <header className="mb-12">
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="text-5xl font-bold tracking-tight text-foreground">
+              Tomorrow Planner
+            </h1>
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
           <p className="text-lg text-muted-foreground">
             Plan your day with clarity and focus
           </p>
