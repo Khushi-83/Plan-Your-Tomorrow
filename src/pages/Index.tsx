@@ -7,6 +7,7 @@ import { Plus, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { ProgressStats } from "@/components/ProgressStats";
+import { MonthlyProductivityCalendar } from "@/components/MonthlyProductivityCalendar";
 import { useTasks } from "@/hooks/useTasks";
 import { useTaskCompletion } from "@/hooks/useTaskCompletion";
 import { User, Session } from '@supabase/supabase-js';
@@ -52,6 +53,19 @@ const Index = () => {
     await supabase.auth.signOut();
     navigate("/auth");
     toast.success("Signed out successfully");
+  };
+
+  const handleAddRoutineTask = () => {
+    const newTask: Omit<Task, "id"> = {
+      title: "New Routine Task",
+      duration: "",
+      urgency: 3,
+      importance: 3,
+      completed: false,
+      color: colors[routineTasks.length % colors.length],
+      notes: "",
+    };
+    addTask(newTask, "routine");
   };
 
   const handleAddTask = () => {
@@ -131,12 +145,25 @@ const Index = () => {
           <StreakCalendar completionData={completionData} />
         </section>
 
+        {/* Monthly Productivity Calendar */}
+        <section className="mb-12">
+          <MonthlyProductivityCalendar completionData={completionData} />
+        </section>
+
         {/* Default Daily Routine Section */}
         <section className="mb-16">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-3xl font-semibold text-foreground">
               Default Daily Routine
             </h2>
+            <Button
+              onClick={handleAddRoutineTask}
+              variant="outline"
+              className="rounded-xl shadow-soft transition-all hover:shadow-medium"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Routine Task
+            </Button>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {routineTasks.map((task) => (
