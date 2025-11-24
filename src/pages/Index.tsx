@@ -5,6 +5,7 @@ import { TaskCard, Task } from "@/components/TaskCard";
 import { Button } from "@/components/ui/button";
 import { Plus, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { ProgressStats } from "@/components/ProgressStats";
 import { useTasks } from "@/hooks/useTasks";
@@ -116,14 +117,17 @@ const Index = () => {
             <h1 className="text-5xl font-bold tracking-tight text-foreground">
               Tomorrow Planner
             </h1>
-            <Button
-              onClick={handleSignOut}
-              variant="outline"
-              className="gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign Out
-            </Button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button
+                onClick={handleSignOut}
+                variant="outline"
+                className="gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </Button>
+            </div>
           </div>
           <p className="text-lg text-muted-foreground">
             Plan your day with clarity and focus
