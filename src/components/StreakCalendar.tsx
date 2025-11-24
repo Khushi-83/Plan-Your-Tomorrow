@@ -1,16 +1,20 @@
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface StreakCalendarProps {
   completionData: Record<string, number>; // date string -> completion count
 }
 
 export const StreakCalendar = ({ completionData }: StreakCalendarProps) => {
-  // Generate current month dates
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  // Generate calendar data for the selected month
   const generateCalendarData = () => {
     const weeks: Date[][] = [];
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
     
     // First day of current month
     const firstDayOfMonth = new Date(year, month, 1);
@@ -52,18 +56,57 @@ export const StreakCalendar = ({ completionData }: StreakCalendarProps) => {
     return date.toISOString().split('T')[0];
   };
 
+  const goToPreviousMonth = () => {
+    const prevMonth = new Date(currentMonth);
+    prevMonth.setMonth(prevMonth.getMonth() - 1);
+    setCurrentMonth(prevMonth);
+  };
+
+  const goToNextMonth = () => {
+    const nextMonth = new Date(currentMonth);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    setCurrentMonth(nextMonth);
+  };
+
+  const canGoNext = () => {
+    const nextMonth = new Date(currentMonth);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    return nextMonth <= new Date();
+  };
+
   const weeks = generateCalendarData();
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   
   // Get current month name
-  const currentMonthName = months[new Date().getMonth()];
-  const currentYear = new Date().getFullYear();
+  const currentMonthName = months[currentMonth.getMonth()];
+  const currentYear = currentMonth.getFullYear();
 
   return (
     <div className="w-full overflow-x-auto rounded-2xl bg-card p-6 shadow-soft">
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Daily Streak - {currentMonthName} {currentYear}</h3>
-        <p className="text-sm text-muted-foreground">Your productivity this month</p>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">Daily Streak - {currentMonthName} {currentYear}</h3>
+          <p className="text-sm text-muted-foreground">Your productivity this month</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={goToPreviousMonth}
+            className="h-8 w-8"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={goToNextMonth}
+            disabled={!canGoNext()}
+            className="h-8 w-8"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       
       <div className="relative">
@@ -86,7 +129,7 @@ export const StreakCalendar = ({ completionData }: StreakCalendarProps) => {
                 const dateStr = formatDate(date);
                 const count = completionData[dateStr] || 0;
                 const isToday = formatDate(new Date()) === dateStr;
-                const isCurrentMonth = date.getMonth() === new Date().getMonth();
+                const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
                 
                 return (
                   <div

@@ -7,7 +7,6 @@ import { Plus, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { ProgressStats } from "@/components/ProgressStats";
-import { MonthlyProductivityCalendar } from "@/components/MonthlyProductivityCalendar";
 import { useTasks } from "@/hooks/useTasks";
 import { useTaskCompletion } from "@/hooks/useTaskCompletion";
 import { User, Session } from '@supabase/supabase-js';
@@ -143,11 +142,6 @@ const Index = () => {
         {/* Streak Calendar */}
         <section className="mb-12">
           <StreakCalendar completionData={completionData} />
-        </section>
-
-        {/* Monthly Productivity Calendar */}
-        <section className="mb-12">
-          <MonthlyProductivityCalendar completionData={completionData} />
         </section>
 
         {/* Default Daily Routine Section */}
