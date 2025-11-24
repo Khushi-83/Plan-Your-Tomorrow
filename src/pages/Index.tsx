@@ -8,9 +8,11 @@ import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { StreakCalendar } from "@/components/StreakCalendar";
 import { ProgressStats } from "@/components/ProgressStats";
+import { TemplateSelector } from "@/components/TemplateSelector";
 import { useTasks } from "@/hooks/useTasks";
 import { useTaskCompletion } from "@/hooks/useTaskCompletion";
 import { User, Session } from '@supabase/supabase-js';
+import { TaskTemplate } from "@/data/taskTemplates";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -97,6 +99,30 @@ const Index = () => {
     deleteTask(id, "tomorrow");
   };
 
+  const handleSelectRoutineTemplate = (template: TaskTemplate) => {
+    template.tasks.forEach((taskData, index) => {
+      const newTask: Omit<Task, "id"> = {
+        ...taskData,
+        color: colors[(routineTasks.length + index) % colors.length],
+        completed: false,
+      };
+      addTask(newTask, "routine");
+    });
+    toast.success(`Added ${template.tasks.length} tasks from ${template.name}`);
+  };
+
+  const handleSelectTomorrowTemplate = (template: TaskTemplate) => {
+    template.tasks.forEach((taskData, index) => {
+      const newTask: Omit<Task, "id"> = {
+        ...taskData,
+        color: colors[(tomorrowTasks.length + index) % colors.length],
+        completed: false,
+      };
+      addTask(newTask, "tomorrow");
+    });
+    toast.success(`Added ${template.tasks.length} tasks from ${template.name}`);
+  };
+
   if (loading || !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -154,14 +180,17 @@ const Index = () => {
             <h2 className="text-3xl font-semibold text-foreground">
               Default Daily Routine
             </h2>
-            <Button
-              onClick={handleAddRoutineTask}
-              variant="outline"
-              className="rounded-xl shadow-soft transition-all hover:shadow-medium"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Routine Task
-            </Button>
+            <div className="flex items-center gap-2">
+              <TemplateSelector onSelectTemplate={handleSelectRoutineTemplate} />
+              <Button
+                onClick={handleAddRoutineTask}
+                variant="outline"
+                className="rounded-xl shadow-soft transition-all hover:shadow-medium"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Routine Task
+              </Button>
+            </div>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {routineTasks.map((task) => (
@@ -181,13 +210,16 @@ const Index = () => {
             <h2 className="text-3xl font-semibold text-foreground">
               Tomorrow's Tasks
             </h2>
-            <Button
-              onClick={handleAddTask}
-              className="rounded-xl shadow-soft transition-all hover:shadow-medium"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Task
-            </Button>
+            <div className="flex items-center gap-2">
+              <TemplateSelector onSelectTemplate={handleSelectTomorrowTemplate} />
+              <Button
+                onClick={handleAddTask}
+                className="rounded-xl shadow-soft transition-all hover:shadow-medium"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Task
+              </Button>
+            </div>
           </div>
           {tomorrowTasks.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-border bg-muted/30 p-12 text-center">
